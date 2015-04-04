@@ -32,24 +32,9 @@ local ERR_WHO = 7
 --rfc2349 specifies the timeout and tsize extensions
 local SUPPORTED_OPTIONS = {blksize=true, timeout=true, tsize=true} 
 
-local loglevel = 'debug'
-
-local log = setmetatable({
-    debug=function(...) end,
-    error=function(...) end,
-    info=function(...) end,
-    warn=function(...) end,
-    crit=function(...) end,
-}, {
-    __call=function(...)
-        return self[loglevel](...)
-    end, 
-})
-
 --Use penlight's prettyprinter if available
 pcall(require, 'pl')
-local p = pretty and pretty.dump or print
-local log=p
+local log = pretty and pretty.dump or print
 
 local time = (function()
     local okay, nixio = pcall(require, "nixio")
@@ -130,9 +115,12 @@ local poll = (function()
         if timedout then return nil end
         local ready = {}
         for _, fd in ipairs(readable) do
-            ready[fd] = {fd=fd, readable=readable[fd] ~= nil, writeable=writeable[fd] ~= nil}
+            fds[fd].readable = true
         end
-        return ready
+        for _, fd in ipairs(writeable) do
+            fds[fd].writeable = true
+        end
+        return fds
     end
 end)()
 
@@ -208,7 +196,7 @@ local function parse_opcode(packet)
     return ({"RRQ", "WRQ", "DATA", "ACK", "ERROR", "OACK"})[opcode]
 end
 
-local function tftp:handle_RRQ(socket, host, port, source, options)
+function tftp:handle_RRQ(socket, host, port, source, options)
     local blksize = options and tonumber(options.blksize) or BLKSIZE
     local timeout_secs = options and tonumber(options.timeout) or TIMEOUT --rfc2349 timout option
     local length = options and tonumber(options.length)
