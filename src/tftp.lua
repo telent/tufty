@@ -306,6 +306,9 @@ function tftp:listen(rrq_generator_callback, wrq_generator_callback, hosts, port
                 `true, data` on success
                 `true, nil` on wouldblock but should retry next round,
                 `false` on finished
+         If EOF aligns on a block boundary (file size is a multiple of
+         block size) it will be necessary to return `true, ""` before
+         returning `false`, so that the client recognises the end of transfer
         (SINK) takes two arguments
             ``data`` to write
             ``done`` (truthy), whether all data has been received and backends can cleanup.
