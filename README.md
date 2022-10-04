@@ -1,12 +1,12 @@
 # Evented Lua TFTP server
 
 ## About
-tufty is a TFTP server intended primarily for booting large PXE images from memory constrained consumer grade routers running [OpenWRT](https://openwrt.org/)
+tufty is a TFTP server intended primarily for booting large PXE images from memory constrained consumer grade routers running [OpenWrt](https://openwrt.org/)
 
-**Another TFTP server?  What? Seriously, there are loads of TFTP servers about; OpenWRT has `dnsmasq` built in which exposes a robust TFTP server. What's the point?**
+**Another TFTP server?  What? Seriously, there are loads of TFTP servers about; OpenWrt has `dnsmasq` built in which exposes a robust TFTP server. What's the point?**
 
-While OpenWRT is extraordinarily powerful, (it's Linux with a package manager after-all), it's often found on the most memory-constrained devices. Storing the files needed to PXE boot even a single workstation becomes an excercise in futility.
-All OpenWRT installations I've seen have Lua with a sockets library installed by default. This enables us to remedy the situation.
+While OpenWrt is extraordinarily powerful, (it's Linux with a package manager after-all), it's often found on the most memory-constrained devices. Storing the files needed to PXE boot even a single workstation becomes an excercise in futility.
+All OpenWrt installations I've seen have Lua with a sockets library installed by default. This enables us to remedy the situation.
 
 The intention is that a user-supplied function fetches data as needed like a _generator function_, allowing you to boot from an off-world network, generate your own responses programmatically, or simply serve files from the local filesystem using an `io.open()` call (assuming you actually do have some space available).
 
@@ -54,7 +54,7 @@ This project was also an excuse to learn Lua's very powerful [coroutines](http:/
 At the moment I don't have documentation prepared, but the source is _very well_ documented.
 
 ## Conforming to
-Hopefully, 
+Hopefully,
 [RFC1350](https://tools.ietf.org/html/rfc1350),
 [RFC2347](https://tools.ietf.org/html/rfc2347),
 [RFC2348](https://tools.ietf.org/html/rfc2348),
