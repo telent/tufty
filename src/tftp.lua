@@ -30,7 +30,7 @@ local ERR_WHO = 7
 --rfc2347 specifies the options extension.
 --rfc2348 specifies the blksize extension
 --rfc2349 specifies the timeout and tsize extensions
-local SUPPORTED_OPTIONS = {blksize=true, timeout=true, tsize=true} 
+local SUPPORTED_OPTIONS = {blksize=true, timeout=true, tsize=true}
 
 --Use penlight's prettyprinter if available
 pcall(require, 'pl')
@@ -51,7 +51,7 @@ end)()
 
 local poll = (function()
     --[[
-    ``poll`` is expected to accept a table of sockets keyed by 
+    ``poll`` is expected to accept a table of sockets keyed by
     backend file descriptor formatted as follows: {
         [low level socket lib file descriptor]{
             fd=(low level socket lib fd)
@@ -73,7 +73,7 @@ local poll = (function()
     ]]
 
     local okay, nixio = pcall(require, "nixio")
-    if okay then 
+    if okay then
         return function(fds, timeout)
             timeout = timeout or -1
             local query_table = {}
@@ -83,7 +83,7 @@ local poll = (function()
                 if client.wantwrite then flags[#flags+1] = 'out' end
                 if client.wantread then flags[#flags+1] = 'in' end
                 query_table[#query_table+1] = {
-                    fd=client.fd, 
+                    fd=client.fd,
                     events=nixio.poll_flags(unpack(flags))
                 }
             end
@@ -96,7 +96,7 @@ local poll = (function()
                     ready[fd.fd] = {fd=fd.fd, readable=revents['in'] ~= nil, writeable=revents['out'] ~= nil}
                 end
             end
---           log(p({ready=ready})) 
+--           log(p({ready=ready}))
             return ready
         end
     end
@@ -171,7 +171,7 @@ local function UDPSocket()
 end
 
 local function is_netascii(s)
-    --[[Check whether a string contains only characters from the RFC764 ascii 
+    --[[Check whether a string contains only characters from the RFC764 ascii
     subset. see https://tools.ietf.org/html/rfc764#page-11
     ]]
     local ctrls = {[0]=1, [10]=1, [13]=1, [7]=1, [8]=1, [9]=1, [11]=1, [12]=1}
@@ -226,7 +226,7 @@ function tftp:handle_RRQ(socket, host, port, source, options)
         end
         log(("coroutine started on %s:%s/"):format(host, port))
         while not done do
-            if tid >= 2^16 then 
+            if tid >= 2^16 then
                 socket:sendto(err("File too big."), host, port)
                 error("File too big.")
             end
@@ -242,11 +242,11 @@ function tftp:handle_RRQ(socket, host, port, source, options)
                 --[[The generator ``source`` can be async and return `true, nil`
                     if no data is ready, but things are going well.
                 ]]
-                yield(false, true)    
+                yield(false, true)
             end
             socket:sendto(self.DATA(data, tid), host, port)
             --[[  Now check for an ACK.
-                RFC1350 requires that for every packet sent, an ACK is received 
+                RFC1350 requires that for every packet sent, an ACK is received
                 before the next packet can be sent.
             ]]
             local acked
@@ -260,12 +260,12 @@ function tftp:handle_RRQ(socket, host, port, source, options)
                    --[[https://tools.ietf.org/html/rfc1350#page-5
                        "If a source TID does not match, the packet should be
                        discarded as erroneously sent from somewhere else.
-                       An error packet should be sent to the source of the 
+                       An error packet should be sent to the source of the
                        incorrect packet, while not disturbing the transfer."
                    ]]
                    socket:sendto(err(ERR_UNKNOWN_ID), ackhost, ackport)
                    yield(true, false)
-                else 
+                else
                     acked = true
                 end
                 retried = retried + 1
@@ -280,7 +280,7 @@ function tftp:handle_RRQ(socket, host, port, source, options)
             tid = tid + 1
             if done then success() end
             yield(true, true)
-        end 
+        end
     end)
 end
 
@@ -292,24 +292,24 @@ function tftp:listen(rrq_generator_callback, wrq_generator_callback, hosts, port
 --[[--
     Listen for TFTP requests on UDP ```bind``:`port`` (0.0.0.0:69 by default)
     and get data from / send data to user-generated source/sink functions.
-    Data is generated/received by functions returned by the the user-supplied 
+    Data is generated/received by functions returned by the the user-supplied
     ``rrq_generator_callback``/``wrq_generator_callback`` factory functions.
-    For every valid request packet received the generator function returned by 
+    For every valid request packet received the generator function returned by
     ``xrq_generator_callback`` will be called expecting data.
-    
+
     When called with a single argument,
-        (the requested resource as a C-style string (no embedded NUL chars)) 
-    ``xrq_generator_callback`` should return a source or sink function that: 
+        (the requested resource as a C-style string (no embedded NUL chars))
+    ``xrq_generator_callback`` should return a source or sink function that:
         (SOURCE) takes a single argument of the required data length in bytes
          and returns blocks of data until complete.
             must return as follows
                 `true, data` on success
-                `true, nil` on wouldblock but should retry next round, 
+                `true, nil` on wouldblock but should retry next round,
                 `false` on finished
         (SINK) takes two arguments
             ``data`` to write
             ``done`` (truthy), whether all data has been received and backends can cleanup.
-    
+
     The (SOURCE) model therefore supports both blocking and non-blocking behaviour.
     If the given function blocks, however, it will block the whole process as Lua
     is single threaded. That may or may not be acceptable depending on your needs.
@@ -340,10 +340,10 @@ function tftp:listen(rrq_generator_callback, wrq_generator_callback, hosts, port
         else
             if request.options then
                 request.options.tsize = request.options.tsize and tostring(tsize)
-                for k, v in pairs(request.options) do 
+                for k, v in pairs(request.options) do
                     if not SUPPORTED_OPTIONS[k] then request.options[k] = nil end
                 end
-            else    
+            else
                 --RFC1350 requires WRQ requests to be responded to with a zero TID before transfer commences,
                 --but when responding to an options request, it is dropped.
                 if request.opcode == 'WRQ' then requestsocket:sendto(self.ACK(0), host, port) end
@@ -365,7 +365,7 @@ function tftp:listen(rrq_generator_callback, wrq_generator_callback, hosts, port
 
     local function accept(socket)
         --[[ Read an incoming request from ``socket``, parse, and ACK as appropriate.
-            If the request is invalid, responds to the client with error and returns `nil` 
+            If the request is invalid, responds to the client with error and returns `nil`
             otherwise returns the parsed request.
         ]]
         local msg, host, port = socket:recvfrom(-1)
@@ -375,7 +375,7 @@ function tftp:listen(rrq_generator_callback, wrq_generator_callback, hosts, port
                 return nil
             else
                 return host, port, xRQ
-            end                  
+            end
         end
     end
 
@@ -387,7 +387,7 @@ function tftp:listen(rrq_generator_callback, wrq_generator_callback, hosts, port
     for i, address in pairs((type(hosts) == 'table' and hosts) or (hosts ~= nil and{hosts}) or {'127.0.0.1'}) do
         socket:bind(address, port)
     end
-    
+
     --[[The main event loop does two things:
         1. Accepts new connections.
         2. Handles events occurring on all sockets by dispatching to a handler coroutine.
@@ -416,7 +416,7 @@ function tftp:listen(rrq_generator_callback, wrq_generator_callback, hosts, port
                         user_generator_callbacks,
                         request,
                         ready.socket,
-                        host, 
+                        host,
                         port
                     )
                     if handler then handlers[handler.socket.fd] = handler end
@@ -432,14 +432,14 @@ function tftp:listen(rrq_generator_callback, wrq_generator_callback, hosts, port
                         ready.wantwrite = wantwrite
                     end
                 end
-                if (not okay) or co_state == 'dead' then 
+                if (not okay) or co_state == 'dead' then
                     --- the handler is finished; cleanup
                     ready.socket:close()
                     handlers[ready.fd] = nil
                     ready.fd = nil
-                    ready = nil   
+                    ready = nil
                 end
-            end 
+            end
         end
     end
 end
@@ -468,7 +468,7 @@ function tftp.parse_XRQ(request)
     function zero_iter(s)
         local pos = 1
         return function()
-            --This is ugly. Lua 5.2 handles embedded NUL bytes in string.gmatch, 
+            --This is ugly. Lua 5.2 handles embedded NUL bytes in string.gmatch,
             --but vanilla Lua5.1 doesn't match correctly and luajit can't seem to parse them
             for i=pos, #s do
                 if s:byte(i) == 0 then
@@ -491,13 +491,13 @@ function tftp.parse_XRQ(request)
         assert(#cstrings % 2 == 0)
         for i=3, #cstrings, 2 do
             --[[ RFC1782, and 3247 require case insensitive comparisons.
-                We normalize them to lowercase with the consequence that 
+                We normalize them to lowercase with the consequence that
                 duplicate keys are replaced which are forbidden by the standard anyway.
             ]]
             options[cstrings[i]:lower()] = cstrings[i+1]:lower()
         end
     end
-    
+
     return {opcode=opcode, filename=filename, mode=mode, options=options}
 end
 
@@ -512,7 +512,7 @@ function tftp.parse_ACK(ack)
     --get the sequence number from an ACK or raise a error if not valid
     assert(#ack == ACKSIZE, "invalid ack")
     assert(parse_opcode(ack) == 'ACK', "invalid ack")
-    
+
     -- extract the low and high order bytes and convert to an integer
     local high, low = ack:byte(3, 4)
     return (high * 256) + low
@@ -573,7 +573,7 @@ function tftp.ERROR(err)
         "Illegal TFTP operation.",
         "Unknown transfer ID.",
         "File already exists.",
-        "No such user.",  
+        "No such user.",
     }
 
     local errno = type(err) == 'string' and 0 or err
